@@ -364,9 +364,9 @@
                           required
                           @change="onPlanChange"
                           class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                    <option value="starter">Starter - 15 000 XAF/mois (3 utilisateurs, 1 magasin)</option>
-                    <option value="business">Business - 40 000 XAF/mois (10 utilisateurs, 3 magasins)</option>
-                    <option value="enterprise">Enterprise - 60 000 XAF/mois (25 utilisateurs, 10 magasins)</option>
+                    <option value="starter">Starter - 15 000 XAF/mois (Utilisateurs illimités, 1 point de vente)</option>
+                    <option value="business">Business - 25 000 XAF/mois (Utilisateurs illimités, 1 PV + 1 magasin)</option>
+                    <option value="enterprise">Enterprise - 50 000 XAF/mois (Tout illimité)</option>
                     <option value="custom">Personnalisé - Prix sur mesure</option>
                   </select>
                 </div>
@@ -989,22 +989,16 @@ const loadCompanies = async () => {
     const response = await superAdminApi.companies.list()
     companies.value = response.data.results || response.data
     
-    console.log('✅ Entreprises chargées:', companies.value.length, 'entreprise(s)')
-    console.log('📊 Détails des entreprises:', companies.value)
-    
     // Compter les entreprises par statut
     const active = companies.value.filter(c => c.is_active && !c.is_suspended).length
     const suspended = companies.value.filter(c => c.is_suspended).length
     const inactive = companies.value.filter(c => !c.is_active && !c.is_suspended).length
-    
-    console.log(`📈 Statistiques: ${active} actives, ${suspended} suspendues, ${inactive} inactives`)
     
     toast.success(
       'Données chargées',
       `${companies.value.length} entreprise(s) trouvée(s) (${active} actives, ${suspended} suspendues)`
     )
   } catch (err) {
-    console.error('❌ Erreur chargement entreprises:', err)
     error.value = err.response?.data?.message || err.message || 'Erreur lors du chargement des entreprises'
     
     toast.error(
@@ -1033,22 +1027,18 @@ const loadDashboardMetrics = async () => {
       total_companies: data.companies?.total || 0
     }
     
-    console.log('✅ Métriques dashboard chargées:', dashboardMetrics.value)
-  } catch (err) {
-    console.error('⚠️ Erreur chargement métriques:', err)
+    } catch (err) {
     // Continuer sans bloquer l'interface
   }
 }
 
 // Actions avec connexion au backend
 const viewCompany = (company) => {
-  console.log('Voir entreprise:', company.name)
   selectedCompany.value = company
   showDetailsModal.value = true
 }
 
 const editCompany = (company) => {
-  console.log('Modifier entreprise:', company.name)
   selectedCompany.value = company
   
   // Pré-remplir le formulaire avec les données de l'entreprise
@@ -1096,13 +1086,11 @@ const toggleCompanyStatus = async (company) => {
     // Appel API backend
     if (company.is_suspended) {
       await superAdminApi.companies.activate(company.id)
-      console.log(`✅ Entreprise ${company.name} activée`)
       toast.success('Entreprise activée', `"${company.name}" a été activée avec succès`)
     } else {
       await superAdminApi.companies.suspend(company.id, {
         reason: 'Désactivation manuelle par l\'administrateur'
       })
-      console.log(`⚠️ Entreprise ${company.name} désactivée`)
       toast.warning('Entreprise désactivée', `"${company.name}" a été désactivée`)
     }
     
@@ -1110,7 +1098,6 @@ const toggleCompanyStatus = async (company) => {
     await loadCompanies()
     
   } catch (err) {
-    console.error('❌ Erreur toggle status:', err)
     const errorMessage = err.response?.data?.message || err.message || 'Erreur lors du changement de statut'
     
     toast.error(
@@ -1154,8 +1141,6 @@ const deleteCompany = async (company) => {
     
     // Appel API backend
     await superAdminApi.companies.delete(company.id)
-    console.log(`✅ Entreprise ${company.name} supprimée`)
-    
     toast.success(
       'Entreprise supprimée',
       `"${company.name}" a été supprimée définitivement`
@@ -1165,7 +1150,6 @@ const deleteCompany = async (company) => {
     await loadCompanies()
     
   } catch (err) {
-    console.error('❌ Erreur suppression:', err)
     const errorMessage = err.response?.data?.message || err.message || 'Erreur lors de la suppression'
     
     toast.error(
@@ -1232,12 +1216,8 @@ const createCompany = async () => {
       payload.monthly_price = formData.value.monthly_price
     }
     
-    console.log('📤 Création entreprise:', payload)
-    
     // Appel API backend (retourne rapidement maintenant)
     const response = await superAdminApi.companies.create(payload)
-    console.log('✅ Entreprise créée:', response.data)
-    
     const newCompany = response.data
     const provisioningStatus = newCompany.provisioning_status || 'pending'
     
@@ -1272,8 +1252,6 @@ const createCompany = async () => {
     await loadCompanies()
     
   } catch (err) {
-    console.error('❌ Erreur création entreprise:', err)
-    
     // Gérer les erreurs spécifiques
     if (err.response?.data) {
       const errors = err.response.data
@@ -1338,12 +1316,8 @@ const saveCompanyChanges = async () => {
       feature_api_access: formData.value.feature_api_access
     }
     
-    console.log('📤 Modification entreprise:', payload)
-    
     // Appel API backend
     await superAdminApi.companies.update(selectedCompany.value.id, payload)
-    console.log('✅ Entreprise modifiée')
-    
     toast.success(
       'Modifications enregistrées',
       `Les informations de "${formData.value.name}" ont été mises à jour`
@@ -1355,8 +1329,6 @@ const saveCompanyChanges = async () => {
     await loadCompanies()
     
   } catch (err) {
-    console.error('❌ Erreur modification entreprise:', err)
-    
     if (err.response?.data) {
       const errors = err.response.data
       if (typeof errors === 'object') {

@@ -231,13 +231,10 @@ const loadDashboardData = async () => {
     }
     
     lastRefresh.value = new Date()
-    console.log('✅ Données dashboard chargées:', dashboardData.value)
-  } catch (err) {
-    console.error('❌ Erreur chargement dashboard:', err)
+    } catch (err) {
     error.value = err.response?.data?.message || err.message || 'Erreur lors du chargement des données'
     
     // Données de fallback pour le développement
-    console.log('ℹ️ Utilisation des données de fallback')
     dashboardData.value = {
       total_companies: 2,
       active_companies: 2,

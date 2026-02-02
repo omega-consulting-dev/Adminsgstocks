@@ -1,8 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { UserPlus, Search, Edit, Trash2, Shield, UserCheck, UserX } from 'lucide-vue-next'
+import { UserPlus, Search, Edit, Trash2, Shield, UserCheck, UserX, CheckCircle, AlertTriangle, X } from 'lucide-vue-next'
 import Layout from '../components/Layout.vue'
 import { superAdminApi } from '../services/superadmin-api'
+import { useDialog } from '../composables/useDialog'
+import { useToast } from '../composables/useToast'
+
+const dialog = useDialog()
+const toast = useToast()
 
 // État
 const users = ref([])
@@ -11,12 +16,20 @@ const isLoading = ref(false)
 const showAddModal = ref(false)
 const editingUser = ref(null)
 
+// Dialogs
+const showConfirmDialog = ref(false)
+const showSuccessDialog = ref(false)
+const showErrorDialog = ref(false)
+const dialogMessage = ref('')
+const errorDetails = ref('')
+
 // Form data
 const userForm = ref({
   username: '',
   email: '',
   first_name: '',
   last_name: '',
+  password: '',
   role: 'viewer',
   is_active: true
 })
@@ -32,9 +45,6 @@ const loadUsers = async () => {
   isLoading.value = true
   try {
     const response = await superAdminApi.users.list()
-    console.log('Response complète:', response)
-    console.log('Response.data:', response.data)
-    
     // L'API retourne une structure paginée avec results
     const userData = response.data.results || response.data
     
@@ -42,10 +52,14 @@ const loadUsers = async () => {
       ...user,
       // Utiliser role_name du backend ou calculer depuis is_staff/is_superuser
       role: user.role_name || (user.is_superuser ? 'super_admin' : (user.is_staff ? 'admin' : 'viewer'))
-    }))
+    })).filter(user => user.username && user.username.trim() !== '') // Filtrer les utilisateurs sans username
   } catch (error) {
-    console.error('Erreur lors du chargement des utilisateurs:', error)
-    alert('Erreur lors du chargement des utilisateurs')
+    console.error('Error loading users:', error)
+    toast.error(
+      'Erreur de chargement',
+      'Impossible de charger les utilisateurs',
+      error.response?.data?.detail || error.message || 'Erreur inconnue'
+    )
   } finally {
     isLoading.value = false
   }
@@ -56,10 +70,10 @@ const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value
   const query = searchQuery.value.toLowerCase()
   return users.value.filter(user => 
-    user.username.toLowerCase().includes(query) ||
-    user.email.toLowerCase().includes(query) ||
-    user.first_name.toLowerCase().includes(query) ||
-    user.last_name.toLowerCase().includes(query)
+    (user.username || '').toLowerCase().includes(query) ||
+    (user.email || '').toLowerCase().includes(query) ||
+    (user.first_name || '').toLowerCase().includes(query) ||
+    (user.last_name || '').toLowerCase().includes(query)
   )
 })
 
@@ -71,6 +85,7 @@ const openAddModal = () => {
     email: '',
     first_name: '',
     last_name: '',
+    password: '',
     role: 'viewer',
     is_active: true
   }
@@ -80,12 +95,29 @@ const openAddModal = () => {
 // Ouvrir le modal d'édition
 const openEditModal = (user) => {
   editingUser.value = user
-  userForm.value = { ...user }
+  userForm.value = { 
+    ...user,
+    password: '' // Toujours vider le mot de passe lors de l'édition
+  }
   showAddModal.value = true
+}
+
+// Ouvrir le dialog de confirmation
+const openConfirmDialog = () => {
+  if (editingUser.value) {
+    dialogMessage.value = userForm.value.password 
+      ? 'Êtes-vous sûr de vouloir modifier cet utilisateur et son mot de passe ?' 
+      : 'Êtes-vous sûr de vouloir modifier cet utilisateur ?'
+  } else {
+    dialogMessage.value = 'Êtes-vous sûr de vouloir créer cet utilisateur ?'
+  }
+  showConfirmDialog.value = true
 }
 
 // Sauvegarder l'utilisateur
 const saveUser = async () => {
+  showConfirmDialog.value = false
+  
   try {
     const userData = {
       username: userForm.value.username,
@@ -99,35 +131,88 @@ const saveUser = async () => {
     
     if (editingUser.value) {
       // Mise à jour
+      // Si le mot de passe est fourni, l'inclure
+      if (userForm.value.password && userForm.value.password.trim()) {
+        userData.password = userForm.value.password
+      }
       await superAdminApi.users.update(editingUser.value.id, userData)
+      dialogMessage.value = 'Utilisateur modifié avec succès !'
     } else {
       // Création (ajouter le mot de passe)
       const createData = {
         ...userData,
-        password: 'ChangeMe123!', // Mot de passe par défaut
-        password_confirmation: 'ChangeMe123!'
+        password: userForm.value.password,
+        password_confirm: userForm.value.password
       }
       await superAdminApi.users.create(createData)
+      dialogMessage.value = 'Utilisateur créé avec succès !'
     }
     
     showAddModal.value = false
+    showSuccessDialog.value = true
     await loadUsers()
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error)
-    alert(`Erreur: ${error.response?.data?.message || 'Une erreur est survenue'}`)
+    // Gérer les erreurs de validation
+    if (error.response?.data) {
+      const errorData = error.response.data
+      
+      // Erreur de validation du mot de passe
+      if (errorData.password) {
+        const passwordErrors = Array.isArray(errorData.password) 
+          ? errorData.password.join('\n') 
+          : errorData.password
+        dialogMessage.value = 'Erreur de validation du mot de passe'
+        errorDetails.value = passwordErrors
+      }
+      // Autres erreurs de validation
+      else if (errorData.detail) {
+        dialogMessage.value = 'Erreur'
+        errorDetails.value = errorData.detail
+      }
+      // Erreurs multiples
+      else if (typeof errorData === 'object') {
+        const errors = Object.entries(errorData)
+          .map(([field, messages]) => {
+            const msg = Array.isArray(messages) ? messages.join(', ') : messages
+            return `${field}: ${msg}`
+          })
+          .join('\n')
+        dialogMessage.value = 'Erreurs de validation'
+        errorDetails.value = errors
+      }
+      // Message générique
+      else {
+        dialogMessage.value = 'Une erreur est survenue'
+        errorDetails.value = errorData.message || errorData.error || 'Erreur inconnue'
+      }
+    } else {
+      dialogMessage.value = 'Une erreur est survenue'
+      errorDetails.value = 'Impossible de sauvegarder l\'utilisateur'
+    }
+    
+    showErrorDialog.value = true
   }
 }
 
 // Supprimer un utilisateur
 const deleteUser = async (userId) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return
+  const confirmed = await dialog.confirm(
+    'Supprimer cet utilisateur',
+    'Êtes-vous sûr de vouloir supprimer cet utilisateur ?',
+    'Cette action est irréversible.'
+  )
+  if (!confirmed) return
   
   try {
     await superAdminApi.users.delete(userId)
+    toast.success('Utilisateur supprimé', 'L\'utilisateur a été supprimé avec succès')
     await loadUsers()
   } catch (error) {
-    console.error('Erreur lors de la suppression:', error)
-    alert(`Erreur: ${error.response?.data?.error || 'Impossible de supprimer cet utilisateur'}`)
+    toast.error(
+      'Erreur de suppression',
+      'Impossible de supprimer cet utilisateur',
+      error.response?.data?.error || error.message
+    )
   }
 }
 
@@ -346,6 +431,18 @@ onMounted(() => {
           </div>
 
           <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              {{ editingUser ? 'Nouveau mot de passe (optionnel)' : 'Mot de passe' }}
+            </label>
+            <input
+              v-model="userForm.password"
+              type="password"
+              :placeholder="editingUser ? 'Laisser vide pour ne pas changer' : 'Minimum 8 caractères'"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
             <select
               v-model="userForm.role"
@@ -379,11 +476,99 @@ onMounted(() => {
             Annuler
           </button>
           <button
-            @click="saveUser"
+            @click="openConfirmDialog"
             class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-500/50"
           >
             {{ editingUser ? 'Mettre à jour' : 'Créer' }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dialog de confirmation -->
+    <div v-if="showConfirmDialog" 
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+         @click.self="showConfirmDialog = false">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+              <AlertTriangle class="w-6 h-6 text-white" />
+            </div>
+            <h3 class="text-xl font-bold text-white">Confirmation</h3>
+          </div>
+          <button @click="showConfirmDialog = false" class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-700 text-base mb-6">{{ dialogMessage }}</p>
+          <div class="flex gap-3 justify-end">
+            <button @click="showConfirmDialog = false" 
+                    class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+              Annuler
+            </button>
+            <button @click="saveUser" 
+                    class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">
+              Confirmer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dialog de succès -->
+    <div v-if="showSuccessDialog" 
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+         @click.self="showSuccessDialog = false">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+              <CheckCircle class="w-6 h-6 text-white" />
+            </div>
+            <h3 class="text-xl font-bold text-white">Succès</h3>
+          </div>
+          <button @click="showSuccessDialog = false" class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-700 text-base mb-6">{{ dialogMessage }}</p>
+          <div class="flex justify-end">
+            <button @click="showSuccessDialog = false" 
+                    class="px-5 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dialog d'erreur -->
+    <div v-if="showErrorDialog" 
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+         @click.self="showErrorDialog = false">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+              <AlertTriangle class="w-6 h-6 text-white" />
+            </div>
+            <h3 class="text-xl font-bold text-white">{{ dialogMessage }}</h3>
+          </div>
+          <button @click="showErrorDialog = false" class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-700 text-base whitespace-pre-line mb-6">{{ errorDetails }}</p>
+          <div class="flex justify-end">
+            <button @click="showErrorDialog = false" 
+                    class="px-5 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">
+              Fermer
+            </button>
+          </div>
         </div>
       </div>
     </div>

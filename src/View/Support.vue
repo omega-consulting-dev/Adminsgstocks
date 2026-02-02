@@ -258,31 +258,24 @@ const getStatusLabel = (status) => {
 
 // Actions
 const refreshTickets = () => {
-  console.log('Refreshing tickets...')
-}
+  }
 
 const createTicket = () => {
-  console.log('Creating new ticket...')
-}
+  }
 
 const viewTicket = (id) => {
-  console.log('Viewing ticket:', id)
-}
+  }
 
 const assignTicket = (id) => {
-  console.log('Assigning ticket:', id)
-}
+  }
 
 const replyTicket = (id) => {
-  console.log('Replying to ticket:', id)
-}
+  }
 
 const closeTicket = (id) => {
-  console.log('Closing ticket:', id)
-}
+  }
 
 // Lifecycle
 onMounted(() => {
-  console.log('Support page loaded')
-})
+  })
 </script>

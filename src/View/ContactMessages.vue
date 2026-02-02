@@ -246,6 +246,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import Layout from './../components/Layout.vue'
+import { useDialog } from '../composables/useDialog'
+import { useToast } from '../composables/useToast'
+
+const dialog = useDialog()
+const toast = useToast()
 
 const messages = ref([])
 const stats = ref({
@@ -289,10 +294,7 @@ async function fetchMessages() {
   loading.value = true
   try {
     const token = localStorage.getItem('auth_token')
-    console.log('🔑 Token récupéré:', token ? 'Présent' : 'Absent')
-    
     if (!token) {
-      console.error('❌ Aucun token trouvé dans localStorage')
       return
     }
     
@@ -302,20 +304,14 @@ async function fetchMessages() {
       }
     })
     
-    console.log('📡 Réponse API:', response.status, response.statusText)
-    
     if (response.ok) {
       const data = await response.json()
-      console.log('📦 Données reçues:', data)
       // L'API retourne un objet de pagination avec results
       messages.value = data.results || (Array.isArray(data) ? data : [])
-      console.log('✅ Messages assignés:', messages.value.length, 'messages')
     } else {
-      console.error(`❌ Erreur ${response.status}:`, await response.text())
       messages.value = []
     }
   } catch (error) {
-    console.error('Erreur lors du chargement des messages:', error)
     messages.value = []
   } finally {
     loading.value = false
@@ -335,8 +331,7 @@ async function fetchStats() {
       stats.value = await response.json()
     }
   } catch (error) {
-    console.error('Erreur lors du chargement des statistiques:', error)
-  }
+    }
 }
 
 function viewMessage(message) {
@@ -358,8 +353,7 @@ async function markAsRead(id) {
     await fetchMessages()
     await fetchStats()
   } catch (error) {
-    console.error('Erreur:', error)
-  }
+    }
 }
 
 function openResponseModal(message) {
@@ -391,24 +385,43 @@ async function sendResponse() {
     
     if (response.ok) {
       const data = await response.json()
-      const emailStatus = data.email_sent ? '📧 Email envoyé au client' : '⚠️ Email non envoyé (vérifiez la configuration SMTP)'
-      alert(`✅ Réponse enregistrée avec succès!\n${emailStatus}`)
+      
+      if (data.email_sent) {
+        toast.success(
+          'Réponse enregistrée',
+          'Email envoyé au client avec succès',
+          undefined
+        )
+      } else {
+        // Email non envoyé mais réponse enregistrée
+        const errorDetails = data.email_error || 'Erreur inconnue lors de l\'envoi de l\'email'
+        toast.warning(
+          'Réponse enregistrée',
+          'Attention: Email non envoyé',
+          errorDetails
+        )
+      }
+      
       closeResponseModal()
       await fetchMessages()
       await fetchStats()
     } else {
-      alert('Erreur lors de l\'envoi de la réponse')
+      toast.error('Erreur', 'Impossible d\'envoyer la réponse', 'Veuillez réessayer plus tard')
     }
   } catch (error) {
-    console.error('Erreur:', error)
-    alert('Erreur lors de l\'envoi de la réponse')
+    toast.error('Erreur réseau', 'Impossible de communiquer avec le serveur', error.message)
   } finally {
     sending.value = false
   }
 }
 
 async function deleteMessage(id) {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) return
+  const confirmed = await dialog.confirm(
+    'Supprimer ce message',
+    'Êtes-vous sûr de vouloir supprimer ce message de contact ?',
+    'Cette action est irréversible.'
+  )
+  if (!confirmed) return
   
   try {
     const token = localStorage.getItem('auth_token')
@@ -420,14 +433,14 @@ async function deleteMessage(id) {
     })
     
     if (response.ok) {
+      toast.success('Message supprimé', 'Le message a été supprimé avec succès')
       await fetchMessages()
       await fetchStats()
     } else {
-      alert('Erreur lors de la suppression')
+      toast.error('Erreur', 'Impossible de supprimer le message', 'Veuillez réessayer')
     }
   } catch (error) {
-    console.error('Erreur:', error)
-    alert('Erreur lors de la suppression')
+    toast.error('Erreur réseau', 'Impossible de communiquer avec le serveur', error.message)
   }
 }
 
@@ -466,7 +479,6 @@ onMounted(() => {
   // Vérifier si l'utilisateur est connecté
   const token = localStorage.getItem('auth_token')
   if (!token) {
-    console.warn('⚠️ Aucun token trouvé, redirection vers la connexion')
     // Rediriger vers la page de connexion si pas de token
     window.location.href = '/Connexion'
     return
