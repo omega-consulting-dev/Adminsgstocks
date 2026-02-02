@@ -248,13 +248,11 @@ const getActionClass = (actionType) => {
 
 // Actions
 const refreshLogs = () => {
-  console.log('Refreshing logs...')
-}
+  }
 
 const loadMetrics = () => {
   // Simuler chargement des métriques
-  console.log('Loading system metrics...')
-}
+  }
 
 // Lifecycle
 onMounted(() => {

@@ -181,7 +181,7 @@
               </div>
               <div class="text-right">
                 <p class="text-sm text-gray-500">Montant Total</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatCurrency(selectedInvoice.total_amount || 0) }}</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatCurrency(selectedInvoice.amount || 0) }}</p>
               </div>
             </div>
 
@@ -227,17 +227,9 @@
             <div class="border-t pt-4">
               <h3 class="font-semibold text-gray-900 mb-3">Détails Montants</h3>
               <div class="space-y-2">
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Montant HT</span>
-                  <span class="font-medium">{{ formatCurrency(selectedInvoice.amount || 0) }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">TVA</span>
-                  <span class="font-medium">{{ formatCurrency(selectedInvoice.tax_amount || 0) }}</span>
-                </div>
-                <div class="flex justify-between text-lg font-bold border-t pt-2">
-                  <span>Total TTC</span>
-                  <span>{{ formatCurrency(selectedInvoice.total_amount || 0) }}</span>
+                <div class="flex justify-between text-lg font-bold">
+                  <span>Montant Total</span>
+                  <span>{{ formatCurrency(selectedInvoice.amount || 0) }}</span>
                 </div>
               </div>
             </div>
@@ -315,14 +307,12 @@ const loadInvoices = async () => {
   try {
     const response = await superAdminApi.billing.list()
     invoices.value = response.data.results || response.data
-    console.log('✅ Factures chargées:', invoices.value.length, 'facture(s)')
     
     toast.success(
       'Factures chargées',
       `${invoices.value.length} facture(s) trouvée(s)`
     )
   } catch (err) {
-    console.error('❌ Erreur chargement factures:', err)
     error.value = err.response?.data?.message || err.message || 'Erreur lors du chargement des factures'
     
     toast.error(
@@ -390,8 +380,6 @@ const getStatusLabel = (status) => {
 const generateInvoices = async () => {
   try {
     toast.info('Génération en cours', 'Création des factures mensuelles...')
-    console.log('Generating monthly invoices...')
-    
     const response = await superAdminApi.billing.generateMonthly()
     const data = response.data
     
@@ -407,7 +395,6 @@ const generateInvoices = async () => {
     
     await loadInvoices()
   } catch (err) {
-    console.error('❌ Erreur génération factures:', err)
     toast.error('Erreur', err.response?.data?.message || 'Impossible de générer les factures')
   }
 }
@@ -420,7 +407,6 @@ const refreshInvoices = async () => {
 }
 
 const viewInvoice = (id) => {
-  console.log('Viewing invoice:', id)
   const invoice = invoices.value.find(inv => inv.id === id)
   
   if (invoice) {
@@ -559,19 +545,6 @@ const downloadInvoice = async (invoice) => {
     
     yPos += 8
     
-    // Ligne TVA
-    doc.setDrawColor(230, 230, 230)
-    doc.line(margin, yPos, pageWidth - margin, yPos)
-    
-    yPos += 6
-    
-    const taxRate = invoiceData.tax_amount > 0 ? '19.25%' : '0%'
-    doc.setTextColor(100, 100, 100)
-    doc.text('TVA (' + taxRate + ')', margin + 3, yPos)
-    doc.text(formatAmount(invoiceData.tax_amount), pageWidth - margin - 3, yPos, { align: 'right' })
-    
-    yPos += 10
-    
     // Ligne séparation avant total
     doc.setDrawColor(200, 200, 200)
     doc.setLineWidth(0.8)
@@ -671,7 +644,6 @@ const downloadInvoice = async (invoice) => {
     
     toast.success('PDF telecharge', fileName + ' a ete telecharge avec succes')
   } catch (err) {
-    console.error('❌ Erreur telechargement:', err)
     toast.error('Erreur', 'Impossible de generer le PDF de la facture')
   }
 }
@@ -686,8 +658,6 @@ const sendReminder = async (invoiceId) => {
     }
 
     toast.info('Envoi en cours', `Envoi de la relance pour ${invoice.company_name}...`)
-    console.log('Sending reminder for invoice:', invoice.id)
-    
     // Simuler l'envoi d'email (à remplacer par un vrai appel API)
     await new Promise(resolve => setTimeout(resolve, 1500))
     
@@ -696,17 +666,13 @@ const sendReminder = async (invoiceId) => {
       `Email de relance envoyé à l'entreprise ${invoice.company_name}`
     )
     
-    console.log('✅ Relance envoyée pour facture:', invoice.invoice_number)
-  } catch (err) {
-    console.error('❌ Erreur envoi relance:', err)
+    } catch (err) {
     toast.error('Erreur', 'Impossible d\'envoyer la relance')
   }
 }
 
 const markAsPaid = async (invoice) => {
   try {
-    console.log('Marking invoice as paid:', invoice.id)
-    
     await superAdminApi.billing.markPaid(invoice.id, {
       payment_method: 'Virement bancaire'
     })
@@ -714,7 +680,6 @@ const markAsPaid = async (invoice) => {
     toast.success('Paiement enregistré', `Facture ${invoice.invoice_number} marquée comme payée`)
     await loadInvoices()
   } catch (err) {
-    console.error('❌ Erreur mise à jour facture:', err)
     toast.error('Erreur', err.response?.data?.message || 'Impossible de mettre à jour la facture')
   }
 }
@@ -726,7 +691,6 @@ const markAsPaidFromModal = async (invoice) => {
 
 // Lifecycle
 onMounted(() => {
-  console.log('Billing page loaded')
   loadInvoices()
 })
 </script>

@@ -243,28 +243,34 @@ const plans = ref([
   {
     id: 1,
     name: 'Starter',
-    description: 'Pour petites entreprises',
+    description: 'Pour petites entreprises - 1 point de vente uniquement',
     price: 15000,
-    max_users: 5,
+    max_users: 0, // Illimité
+    max_stores: 1, // 1 point de vente
+    max_warehouses: 0, // Pas de magasin/entrepôt
     max_storage_gb: 5,
     active: true
   },
   {
     id: 2,
     name: 'Business',
-    description: 'Pour entreprises moyennes',
+    description: 'Pour entreprises moyennes - 1 point de vente + 1 magasin',
     price: 25000,
-    max_users: 20,
+    max_users: 0, // Illimité
+    max_stores: 1, // 1 point de vente
+    max_warehouses: 1, // 1 magasin/entrepôt
     max_storage_gb: 20,
     active: true
   },
   {
     id: 3,
     name: 'Enterprise',
-    description: 'Pour grandes entreprises',
+    description: 'Pour grandes entreprises - Points de vente et magasins illimités',
     price: 50000,
-    max_users: 0,
-    max_storage_gb: 0,
+    max_users: 0, // Illimité
+    max_stores: 0, // Illimité
+    max_warehouses: 0, // Illimité
+    max_storage_gb: 0, // Illimité
     active: true
   }
 ])
@@ -281,59 +287,46 @@ const formatCurrency = (amount) => {
 // Actions
 const toggleMaintenance = () => {
   settings.value.maintenance_mode = !settings.value.maintenance_mode
-  console.log('Maintenance mode:', settings.value.maintenance_mode)
-}
+  }
 
 const saveSettings = () => {
-  console.log('Saving general settings...', settings.value)
-}
+  }
 
 const resetSettings = () => {
-  console.log('Resetting settings...')
-}
+  }
 
 const saveLimits = () => {
-  console.log('Saving system limits...', limits.value)
-}
+  }
 
 const saveNotifications = () => {
-  console.log('Saving notification settings...', notifications.value)
-}
+  }
 
 const addPlan = () => {
-  console.log('Adding new plan...')
-}
+  }
 
 const editPlan = (id) => {
-  console.log('Editing plan:', id)
-}
+  }
 
 const togglePlan = (id) => {
   const plan = plans.value.find(p => p.id === id)
   if (plan) {
     plan.active = !plan.active
-    console.log('Toggled plan:', id, plan.active)
-  }
+    }
 }
 
 const cleanupLogs = () => {
-  console.log('Cleaning up old logs...')
-}
+  }
 
 const generateReports = () => {
-  console.log('Generating monthly reports...')
-}
+  }
 
 const backupDatabase = () => {
-  console.log('Creating database backup...')
-}
+  }
 
 const sendTestNotification = () => {
-  console.log('Sending test notification...')
-}
+  }
 
 // Lifecycle
 onMounted(() => {
-  console.log('Settings page loaded')
-})
+  })
 </script>

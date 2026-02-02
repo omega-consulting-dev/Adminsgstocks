@@ -6,7 +6,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 
 // Configuration API pour SuperAdmin
 const API_CONFIG = {
-  baseURL: 'http://localhost:8000/api/v1/superadmin',
+  baseURL: 'http://localhost:8000/api/v1',
   timeout: 60000, // 60 secondes pour création de tenant (migrations + setup)
   withCredentials: true
 }
@@ -23,11 +23,9 @@ ApiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
-    console.log(`🌐 SuperAdmin API Request: ${config.method?.toUpperCase()} ${config.url}`)
     return config
   },
   (error) => {
-    console.error('❌ Request Error:', error)
     return Promise.reject(error)
   }
 )
@@ -35,17 +33,9 @@ ApiClient.interceptors.request.use(
 // Intercepteur de réponse pour gérer les erreurs globales
 ApiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log(`✅ SuperAdmin API Response: ${response.status} ${response.config.url}`)
     return response
   },
   (error: AxiosError) => {
-    console.error(`❌ SuperAdmin API Error:`, {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.message,
-      data: error.response?.data
-    })
-
     // Gestion des erreurs d'authentification
     if (error.response?.status === 401) {
       // Token expiré ou invalide
@@ -82,77 +72,54 @@ export const superAdminApi = {
 
   // Endpoints spécifiques SuperAdmin
   companies: {
-    list: () => ApiClient.get('/companies/'),
-    get: (id: number) => ApiClient.get(`/companies/${id}/`),
-    create: (data: any) => ApiClient.post('/companies/', data),
-    update: (id: number, data: any) => ApiClient.put(`/companies/${id}/`, data),
-    delete: (id: number) => ApiClient.delete(`/companies/${id}/`),
-    suspend: (id: number) => ApiClient.post(`/companies/${id}/suspend/`),
-    activate: (id: number) => ApiClient.post(`/companies/${id}/activate/`)
+    list: () => ApiClient.get('/superadmin/companies/'),
+    get: (id: number) => ApiClient.get(`/superadmin/companies/${id}/`),
+    create: (data: any) => ApiClient.post('/superadmin/companies/', data),
+    update: (id: number, data: any) => ApiClient.put(`/superadmin/companies/${id}/`, data),
+    delete: (id: number) => ApiClient.delete(`/superadmin/companies/${id}/`),
+    suspend: (id: number) => ApiClient.post(`/superadmin/companies/${id}/suspend/`),
+    activate: (id: number) => ApiClient.post(`/superadmin/companies/${id}/activate/`)
   },
 
   billing: {
-    list: () => ApiClient.get('/billing/'),
-    get: (id: number) => ApiClient.get(`/billing/${id}/`),
-    create: (data: any) => ApiClient.post('/billing/', data),
-    update: (id: number, data: any) => ApiClient.put(`/billing/${id}/`, data),
-    generateMonthly: () => ApiClient.post('/billing/generate_monthly/'),
-    markPaid: (id: number) => ApiClient.post(`/billing/${id}/mark_paid/`),
-    revenueSummary: () => ApiClient.get('/billing/revenue_summary/')
+    list: () => ApiClient.get('/superadmin/billing/'),
+    get: (id: number) => ApiClient.get(`/superadmin/billing/${id}/`),
+    create: (data: any) => ApiClient.post('/superadmin/billing/', data),
+    update: (id: number, data: any) => ApiClient.put(`/superadmin/billing/${id}/`, data),
+    generateMonthly: () => ApiClient.post('/superadmin/billing/generate_monthly/'),
+    markPaid: (id: number) => ApiClient.post(`/superadmin/billing/${id}/mark_paid/`),
+    revenueSummary: () => ApiClient.get('/superadmin/billing/revenue_summary/')
   },
 
   support: {
-    list: () => ApiClient.get('/support/'),
-    get: (id: number) => ApiClient.get(`/support/${id}/`),
-    create: (data: any) => ApiClient.post('/support/', data),
-    update: (id: number, data: any) => ApiClient.put(`/support/${id}/`, data),
-    close: (id: number) => ApiClient.post(`/support/${id}/close/`)
+    list: () => ApiClient.get('/superadmin/support/'),
+    get: (id: number) => ApiClient.get(`/superadmin/support/${id}/`),
+    create: (data: any) => ApiClient.post('/superadmin/support/', data),
+    update: (id: number, data: any) => ApiClient.put(`/superadmin/support/${id}/`, data),
+    close: (id: number) => ApiClient.post(`/superadmin/support/${id}/close/`)
   },
 
   audit: {
-    list: () => ApiClient.get('/audit-logs/'),
-    get: (id: number) => ApiClient.get(`/audit-logs/${id}/`)
+    list: () => ApiClient.get('/superadmin/audit-logs/'),
+    get: (id: number) => ApiClient.get(`/superadmin/audit-logs/${id}/`)
   },
 
   dashboard: {
-    metrics: () => ApiClient.get('/dashboard/metrics/'),
-    overview: () => ApiClient.get('/dashboard/overview/')
+    metrics: () => ApiClient.get('/superadmin/dashboard/metrics/'),
+    overview: () => ApiClient.get('/superadmin/dashboard/overview/')
   },
 
   users: {
-    list: (params?: any) => axios.get('http://localhost:8000/api/v1/auth/users/', { 
-      params,
-      headers: { 
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`
-      }
-    }),
-    get: (id: number) => axios.get(`http://localhost:8000/api/v1/auth/users/${id}/`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    create: (data: any) => axios.post('http://localhost:8000/api/v1/auth/users/', data, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    update: (id: number, data: any) => axios.put(`http://localhost:8000/api/v1/auth/users/${id}/`, data, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    delete: (id: number) => axios.delete(`http://localhost:8000/api/v1/auth/users/${id}/`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    activate: (id: number) => axios.post(`http://localhost:8000/api/v1/auth/users/${id}/activate/`, {}, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    deactivate: (id: number) => axios.post(`http://localhost:8000/api/v1/auth/users/${id}/deactivate/`, {}, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    resetPassword: (id: number, data: any) => axios.post(`http://localhost:8000/api/v1/auth/users/${id}/reset_password/`, data, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    stats: () => axios.get('http://localhost:8000/api/v1/auth/users/stats/', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    }),
-    me: () => axios.get('http://localhost:8000/api/v1/auth/users/me/', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    })
+    list: (params?: any) => ApiClient.get('/auth/users/', { params }),
+    get: (id: number) => ApiClient.get(`/auth/users/${id}/`),
+    create: (data: any) => ApiClient.post('/auth/users/', data),
+    update: (id: number, data: any) => ApiClient.put(`/auth/users/${id}/`, data),
+    delete: (id: number) => ApiClient.delete(`/auth/users/${id}/`),
+    activate: (id: number) => ApiClient.post(`/auth/users/${id}/activate/`),
+    deactivate: (id: number) => ApiClient.post(`/auth/users/${id}/deactivate/`),
+    resetPassword: (id: number, data: any) => ApiClient.post(`/auth/users/${id}/reset_password/`, data),
+    stats: () => ApiClient.get('/auth/users/stats/'),
+    me: () => ApiClient.get('/main/users/me/')
   }
 }
 

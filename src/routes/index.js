@@ -51,7 +51,6 @@ function isTokenExpired(token) {
         
         return expirationTime < (now + fiveMinutes)
     } catch (e) {
-        console.error('Erreur lors de la vérification du token:', e)
         return true
     }
 }
@@ -64,7 +63,6 @@ router.beforeEach((to, from, next) => {
     
     // Vérifier si le token est expiré
     if (token && isTokenExpired(token)) {
-        console.warn('⚠️ Token expiré, déconnexion automatique')
         localStorage.removeItem('auth_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user_data')

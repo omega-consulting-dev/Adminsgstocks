@@ -50,8 +50,6 @@ const handleLogin = async () => {
             localStorage.setItem('refresh_token', data.refresh)
             localStorage.setItem('user_data', JSON.stringify(data.user))
             
-            console.log('✅ Connexion réussie')
-            
             // Redirection vers le dashboard UNIQUEMENT si succès
             await router.push('/Dashboard')
         } else {
@@ -61,8 +59,6 @@ const handleLogin = async () => {
     } catch (err) {
         // Arrêter le chargement immédiatement
         loading.value = false
-        
-        console.error('❌ Erreur de connexion:', err)
         
         // Gestion détaillée des erreurs
         if (err.response) {
@@ -101,22 +97,18 @@ const handleLogin = async () => {
         }
         
         // Ne PAS rediriger en cas d'erreur
-        console.log('ℹ️ Connexion échouée, reste sur la page de login')
-    }
+        }
 }
 
 const handleForgotPassword = () => {
-    console.log('Mot de passe oublié')
     // TODO: Implémenter la récupération de mot de passe
 }
 
 const handleCreateAccount = () => {
-    console.log('Créer un compte')
     // TODO: Implémenter la création de compte
 }
 
 const closeModal = () => {
-    console.log('Fermer la modale')
     // TODO: Implémenter la fermeture si nécessaire
 }
 </script>
