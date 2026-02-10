@@ -1,5 +1,5 @@
 # Dockerfile pour Admin SG Stock (Vue.js)
-FROM node:18-alpine as build
+FROM node:20-alpine as build
 
 WORKDIR /app
 
