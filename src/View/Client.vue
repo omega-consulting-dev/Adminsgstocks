@@ -215,7 +215,7 @@
                       </button>
                       <button 
                         @click="toggleCompanyStatus(company)" 
-                        :title="company.is_suspended ? 'Activer l\'entreprise' : 'Désactiver l\'entreprise'"
+                        :title="company.is_suspended ? 'Activer l\'entreprise' : 'Suspendre l\'entreprise'"
                         :class="[
                           'p-2 rounded-lg transition-colors',
                           company.is_suspended 
