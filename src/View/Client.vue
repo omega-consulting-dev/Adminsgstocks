@@ -213,16 +213,6 @@
                               class="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors">
                         <Edit class="w-4 h-4" />
                       </button>
-                      <button @click="toggleCompanyStatus(company)" 
-                              :title="company.is_active ? 'Suspendre' : 'Activer'"
-                              :class="[
-                                'p-2 rounded-lg transition-colors',
-                                company.is_active 
-                                  ? 'text-orange-600 hover:bg-orange-100' 
-                                  : 'text-green-600 hover:bg-green-100'
-                              ]">
-                        <component :is="company.is_active ? Pause : Play" class="w-4 h-4" />
-                      </button>
                       <button 
                         @click="toggleCompanyStatus(company)" 
                         :title="company.is_suspended ? 'Activer l\'entreprise' : 'Désactiver l\'entreprise'"
