@@ -1,12 +1,18 @@
 /**
  * Service API spécifique pour AdminSgStock (SuperAdmin)
- * Force l'utilisation de localhost:8000 sans tenant-specific URLs
+ * Force l'utilisation de l'API sans tenant-specific URLs
  */
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
 
 // Configuration API pour SuperAdmin
+const API_BASE_DOMAIN = import.meta.env.VITE_API_BASE_DOMAIN || 'localhost'
+const API_PORT = import.meta.env.VITE_API_PORT || '8000'
+const API_BASE_URL = API_PORT === '80' || API_PORT === '443' 
+  ? `http://${API_BASE_DOMAIN}/api/v1`
+  : `http://${API_BASE_DOMAIN}:${API_PORT}/api/v1`
+
 const API_CONFIG = {
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: API_BASE_URL,
   timeout: 60000, // 60 secondes pour création de tenant (migrations + setup)
   withCredentials: true
 }
