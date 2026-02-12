@@ -34,6 +34,9 @@ RUN echo "VITE_API_PORT=${VITE_API_PORT}" > .env.production && \
 # Build de production - Vite lira .env.production automatiquement
 RUN NODE_ENV=production npm run build -- --mode production
 
+# Vérifier que le logo a été copié par Vite
+RUN ls -la /app/dist/logo.svg || echo "Logo not found in dist, will copy manually"
+
 # Stage de production avec Nginx
 FROM nginx:alpine
 
@@ -42,6 +45,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copier les fichiers buildés
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copier explicitement le logo s'il n'est pas dans dist
+COPY --from=build /app/public/logo.svg /usr/share/nginx/html/logo.svg
 
 # Exposer le port
 EXPOSE 80
