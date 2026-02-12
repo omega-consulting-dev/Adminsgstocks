@@ -26,7 +26,8 @@ const handleLogin = async () => {
 
     try {
         // Utiliser le endpoint auth login
-        const response = await fetch(`http://${import.meta.env.VITE_API_BASE_DOMAIN}/api/v1/auth/login/`, {
+        const protocol = import.meta.env.VITE_USE_HTTPS === 'true' ? 'https' : 'http'
+        const response = await fetch(`${protocol}://${import.meta.env.VITE_API_BASE_DOMAIN}/api/v1/auth/login/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

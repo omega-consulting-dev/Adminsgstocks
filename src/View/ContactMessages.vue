@@ -268,7 +268,8 @@ const responseModalMessage = ref(null)
 const responseText = ref('')
 const sending = ref(false)
 
-const API_URL = `http://${import.meta.env.VITE_API_BASE_DOMAIN}/api/v1/auth`
+const protocol = import.meta.env.VITE_USE_HTTPS === 'true' ? 'https' : 'http'
+const API_URL = `${protocol}://${import.meta.env.VITE_API_BASE_DOMAIN}/api/v1/auth`
 
 const filteredMessages = computed(() => {
   let filtered = messages.value || []

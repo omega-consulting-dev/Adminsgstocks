@@ -7,9 +7,11 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 // Configuration API pour SuperAdmin
 const API_BASE_DOMAIN = import.meta.env.VITE_API_BASE_DOMAIN || 'localhost'
 const API_PORT = import.meta.env.VITE_API_PORT || '8000'
+const USE_HTTPS = import.meta.env.VITE_USE_HTTPS === 'true' || API_PORT === '443'
+const PROTOCOL = USE_HTTPS ? 'https' : 'http'
 const API_BASE_URL = API_PORT === '80' || API_PORT === '443' 
-  ? `http://${API_BASE_DOMAIN}/api/v1`
-  : `http://${API_BASE_DOMAIN}:${API_PORT}/api/v1`
+  ? `${PROTOCOL}://${API_BASE_DOMAIN}/api/v1`
+  : `${PROTOCOL}://${API_BASE_DOMAIN}:${API_PORT}/api/v1`
 
 const API_CONFIG = {
   baseURL: API_BASE_URL,
