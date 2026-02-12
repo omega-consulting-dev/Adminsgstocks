@@ -23,15 +23,16 @@ COPY . .
 # Vérifier la présence de .env.production
 RUN ls -la .env* || echo "Aucun fichier .env trouvé"
 
-# Build de production avec variables d'environnement explicites
-# Les passer directement à la commande build pour que Vite les voie
-RUN VITE_API_PORT=${VITE_API_PORT} \
-    VITE_API_BASE_DOMAIN=${VITE_API_BASE_DOMAIN} \
-    VITE_USE_HTTPS=${VITE_USE_HTTPS} \
-    VITE_WS_PORT=${VITE_WS_PORT} \
-    VITE_WS_BASE_DOMAIN=${VITE_WS_BASE_DOMAIN} \
-    VITE_SUPERADMIN_MODE=${VITE_SUPERADMIN_MODE} \
-    NODE_ENV=production npm run build -- --mode production
+# Créer le fichier .env.production que Vite lira pendant le build
+RUN echo "VITE_API_PORT=${VITE_API_PORT}" > .env.production && \
+    echo "VITE_API_BASE_DOMAIN=${VITE_API_BASE_DOMAIN}" >> .env.production && \
+    echo "VITE_USE_HTTPS=${VITE_USE_HTTPS}" >> .env.production && \
+    echo "VITE_WS_PORT=${VITE_WS_PORT}" >> .env.production && \
+    echo "VITE_WS_BASE_DOMAIN=${VITE_WS_BASE_DOMAIN}" >> .env.production && \
+    echo "VITE_SUPERADMIN_MODE=${VITE_SUPERADMIN_MODE}" >> .env.production
+
+# Build de production - Vite lira .env.production automatiquement
+RUN NODE_ENV=production npm run build -- --mode production
 
 # Stage de production avec Nginx
 FROM nginx:alpine
